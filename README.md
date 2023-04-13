@@ -50,7 +50,7 @@ $ cargo run -- someverylongstringthatwouldntfitinsidethespace
 
 The library parses the executable it's running in and changes values before dumping a new executable.
 
-## In depth How
+### In depth
 
 Simply put : an abuse of the `#[link_section = ".custom"]` attribute. There is no assembly patching or anything. The
 data entries in the `mutself!` macro are stored in a custom section in the executable. The code that run only has a
@@ -69,3 +69,8 @@ The layout in memory is like so (factoring out alignment) :
 
 Since every entry is defined relatively to the base, they can grow or shrink in size freely without fear the runtime
 code can't address them.
+
+## Limitations
+
+The initializer expression must be of a type that can be stored inline (e.g. not a slice). A slice will only store a ptr
+and a size in the custom executable section referencing `.data`, which means we can't modify it.

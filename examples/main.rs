@@ -1,5 +1,6 @@
 mutself::mutself! {
-    MY_DATA_NUM = 0xDEADBEEF_usize.to_ne_bytes();
+    MY_DATA_NUM = 0xDEADBEEF_usize;
+    FILE = include_bytes!("Cargo.toml");
 }
 
 pub fn main() {
@@ -9,6 +10,7 @@ pub fn main() {
         mutself(
             "new.exe",
             Some(&arg.parse::<usize>().unwrap().to_ne_bytes()),
+            None,
         )
         .unwrap();
     }

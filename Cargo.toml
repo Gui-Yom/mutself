@@ -1,7 +1,13 @@
 [package]
 name = "mutself"
 version = "0.1.0"
+authors = ["Guillaume Anthouard <guillaume.anthouard@hotmail.fr>"]
 edition = "2021"
+rust-version = "1.61"
+description = "Create self-modifying executables"
+repository = "https://github.com/Gui-Yom/mutself"
+license = "MIT"
+keywords = ["executable", "linker", "static", "proc-macro"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
