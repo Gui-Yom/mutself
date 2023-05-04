@@ -20,7 +20,7 @@ quote = { version = "1" }
 proc-macro2 = "1"
 
 [target.'cfg(windows)'.dependencies]
-object = { version = "0.30", default-features = false, features = ["read_core", "write_std", "pe"] }
+object = { version = "0.31", default-features = false, features = ["read_core", "write_std", "pe"] }
 
 [target.'cfg(unix)'.dependencies]
-object = { version = "0.30", default-features = false, features = ["read_core", "write_std", "elf"] }
+object = { version = "0.31", default-features = false, features = ["read_core", "write_std", "elf"] }
