@@ -1,9 +1,9 @@
-use std::fs;
+use std::path::PathBuf;
+use std::{env, fs};
 
 use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
 use syn::{
     parse_macro_input, Expr, ExprArray, ExprLit, ExprMacro, ExprMethodCall, ExprUnary, Ident, Lit,
     LitStr, Macro, Token, UnOp, Visibility,
@@ -57,11 +57,17 @@ fn init_from_expr(expr: &Expr) -> (usize, TokenStream) {
             ..
         }) => {
             if path.segments.first().unwrap().ident == format_ident!("include_bytes") {
-                let str = syn::parse2::<LitStr>(tokens.clone()).unwrap().value();
+                let str = syn::parse2::<LitStr>(tokens.clone())
+                    .unwrap()
+                    .value()
+                    .replace("\\\\", "\\");
+                let mut path = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+                path.push(&str);
+                let path_str = path.display().to_string();
                 return (
-                    fs::metadata(dbg!(&str)).unwrap().len() as usize,
+                    fs::metadata(dbg!(&path)).unwrap().len() as usize,
                     quote! {
-                        #expr
+                        *include_bytes!(#path_str)
                     },
                 );
             }
@@ -70,12 +76,7 @@ fn init_from_expr(expr: &Expr) -> (usize, TokenStream) {
             expr: inner, op, ..
         }) => match op {
             UnOp::Deref(_) => {
-                return (
-                    init_from_expr(&inner).0,
-                    quote! {
-                        #expr
-                    },
-                );
+                return init_from_expr(&inner);
             }
             _ => {}
         },
@@ -94,7 +95,7 @@ impl Parse for StaticEntry {
         let visibility: Visibility = input.parse()?;
         let name: Ident = input.parse()?;
         input.parse::<Token![=]>()?;
-        let mut init: Expr = input.parse()?;
+        let init: Expr = input.parse()?;
         input.parse::<Token![;]>()?;
 
         let (len, new_init) = init_from_expr(&init);
@@ -159,10 +160,11 @@ fn mutself_impl(input: MacroInput) -> TokenStream {
         let len: usize = e.len;
 
         quote! {
+            #[used]
             #[link_section = #section_name]
             static #len_ident: usize = #len;
 
-            #[allow(unused)]
+            #[used]
             #[link_section = #section_name]
             static #static_ident: [u8; #len] = #expr;
         }
@@ -262,7 +264,7 @@ fn mutself_impl(input: MacroInput) -> TokenStream {
         }
 
         #[cfg(windows)]
-        pub fn mutself<P: AsRef<Path>>(
+        pub fn mutself<P: AsRef<::std::path::Path>>(
             new: P,
             #(#args_decl),*
         ) -> object::Result<()> {
@@ -277,7 +279,7 @@ fn mutself_impl(input: MacroInput) -> TokenStream {
             use object::{FileKind, Object, ObjectSection};
             use std::ops::Deref;
 
-            fn do_generic<Pe: ImageNtHeaders, P: AsRef<Path>>(
+            fn do_generic<Pe: ImageNtHeaders, P: AsRef<::std::path::Path>>(
                 data: &[u8],
                 new: P,
                 #(#args_decl2),*
@@ -410,12 +412,12 @@ fn mutself_impl(input: MacroInput) -> TokenStream {
                     writer.write_certificate_table(&data[address as usize..][..size as usize]);
                 }
 
-                fs::write(new, out).unwrap();
+                ::std::fs::write(new, out).unwrap();
 
                 Ok(())
             }
 
-            let data = fs::read(std::env::current_exe().unwrap()).unwrap();
+            let data = ::std::fs::read(::std::env::current_exe().unwrap()).unwrap();
             match FileKind::parse(&*data).unwrap() {
                 FileKind::Pe64 => {
                     do_generic::<ImageNtHeaders64, P>(&data, new, #(#args),*)?

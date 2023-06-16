@@ -1,6 +1,6 @@
 mutself::mutself! {
     MY_DATA_NUM = 0xDEADBEEF_usize;
-    FILE = include_bytes!("Cargo.toml");
+    FILE = *include_bytes!("Cargo.toml");
 }
 
 pub fn main() {
